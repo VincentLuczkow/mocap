@@ -1,0 +1,28 @@
+# AST/ASF file generated using VICON BodyLanguage
+# -----------------------------------------------
+:version 1.10
+:name SIMPLE_TEST
+:units
+  mass 1.0
+  length 0.45
+  angle deg
+:documentation
+   Test documentation.
+   This file contains 2 bones.
+:root
+   order TX TY TZ RX RY RZ
+   axis XYZ
+   position 0 0 0
+   orientation 0 0 0
+:bonedata
+  begin
+     id 1
+     name leaf
+     direction 0.0 0.0 1.0
+     length 2.0
+     axis 90 0 0  XYZ
+  end
+:hierarchy
+  begin
+    root leaf
+  end
