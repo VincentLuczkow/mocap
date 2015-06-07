@@ -1,10 +1,30 @@
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 from OpenGL.GL import *
+from .Bone import Bone
 import sys
 
 
 name = "Motion Capture"
+
+
+# Renders a "bone" with length and direction in the local coordinate system
+# For now this just renders a line. Later this will probably switch to an ellipsoid of some sort.
+def render_single_bone(length, direction):
+
+    return 0
+
+
+# Renders bone at the origin of the local coordinate system. Then renders
+# all of its descendents.
+def render_bone_tree(bone: Bone):
+    # Render the current bone
+    render_single_bone(bone.length, bone.direction)
+    for child in bone.children:
+        # Rotate to child's coordinate system
+        render_bone_tree(child)
+        # Pop the rotation
+    return 0
 
 
 # Create the basic scene

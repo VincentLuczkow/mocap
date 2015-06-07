@@ -1,5 +1,6 @@
-import numpy as np
 import pdb
+import numpy as np
+
 
 # Why doesn't numpy have methods for these? Nonsense, I assume.
 # For readability, I didn't combine these methods
@@ -33,7 +34,8 @@ def rotation_around_z_axis(angle):
 
 class Bone:
 
-    def __init__(self, index, name, direction, length, axis, axis_values, degrees_of_freedom):
+    def __init__(self, index: int, name: str, direction: list, length: float, axis: str, rotation_from_global_axes: list,
+                 degrees_of_freedom: list):
         self.index = index
         self.name = name
         self.direction = direction
@@ -41,13 +43,14 @@ class Bone:
         self.axis = axis
         # These values represent the rotation from global coordinates to local coordinates
         # Order of rotation is x, y, z.
-        self.x_axis, self.y_axis, self.z_axis = axis_values
+        self.x_axis, self.y_axis, self.z_axis = rotation_from_global_axes
         self.rotation_from_axes = self.compute_rotation_from_axes()
         self.rotation_to_axes = np.transpose(self.rotation_from_axes)
         self.rotation_from_parent = None
         self.degrees_of_freedom = degrees_of_freedom
         self.doftl = None
-        self.sibling = None
+        self.children = {}
+        self.siblings = None
         self.parent = None
         self.rotation_to_parent = np.zeros([4,4])
         self.rotation = None
@@ -55,8 +58,8 @@ class Bone:
         self.tl = None
 
     @staticmethod
-    def create_root_bone(axis, axis_values):
-        return Bone(0, "root", [0,0,0], 0, axis, axis_values, None)
+    def create_root_bone(axis: str, rotation_from_global_axes: list):
+        return Bone(0, "root", [0,0,0], 0, axis, rotation_from_global_axes, None)
 
     def compute_rotation_from_axes(self):
         x_rotation = rotation_around_x_axis(self.x_axis)

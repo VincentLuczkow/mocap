@@ -1,37 +1,6 @@
-import re
-import sys
-from numpy import pi
-from Skeleton import Bone
 from pdb import set_trace
-
-
-def parse_pose(lines):
-    angles = {}
-    for line in lines:
-        values = line.split(" ")
-        new_angles = [float(x) for x in values[1:]]
-        angles[values[0]] = new_angles
-
-    return angles
-
-
-def parse_amc_file(file_name):
-    with open(file_name, "r") as pose_file:
-        lines = pose_file.readlines()
-    poses = []
-    marker = 0
-    while marker < len(lines):
-        if re.match(r'\d+', lines[marker]):
-            start = marker + 1
-            marker += 1
-            end = len(lines) - 1
-            while marker < len(lines):
-                if re.match(r'\d+', lines[marker]):
-                    end = marker - 1
-                    break
-                marker += 1
-            poses.append(parse_pose(lines[start:end]))
-    return poses
+from pyAcclaim.Bone import Bone
+from numpy import pi
 
 
 # Assumes ASF file is in the following format:
@@ -96,7 +65,7 @@ def parse_asf_version(line):
         version = line.strip().split()[1]
     except IndexError:
         print(":version line does not contain a version number.")
-        exit(0)
+        set_trace()
     return version
 
 
@@ -152,7 +121,6 @@ def parse_asf_bonedata(lines, degree_type):
     bones = ['root']
     bonedata = {}
     for line in lines:
-        #print(line)
         if line.strip() == "begin":
             new_bone = parse_asf_bone(lines, degree_type)
             bones.append(new_bone.name)
@@ -182,7 +150,7 @@ def parse_asf_bone(lines, degree_type):
     # The rotations from each axis for this bone.
     axis_values = [float(x) * multiplier for x in axis_line[1:4]]
     axis = axis_line[4]
-    # Check if this bone has any degrees of freedom
+    # Check if this bone has any rotational degrees of freedom
     degrees_of_freedom = parse_degrees_of_freedom(lines)
     bone = Bone(index, name, direction, length, axis, axis_values, degrees_of_freedom)
     return bone
@@ -190,25 +158,28 @@ def parse_asf_bone(lines, degree_type):
 
 def parse_degrees_of_freedom(lines):
     dof_line = next(lines).strip().split(" ")
-    # If no limitations are being declared.
+    # If the bone has no degrees of freedom i.e. can't rotate
     if dof_line[0] != "dof":
         return None
     degrees_of_freedom = {}
-    # The first limits string is in the format:
+
+    # The first limit string is in the format:
     # limits (lower_limit upper_limit)
-    limits_string = next(lines).strip().split(" ")[1:]
+    limit_string = next(lines).strip().split()[1:]
     for direction in dof_line[1:]:
+
         # The lower limit is in the format (float.
         # We cut off the open paren
-        lower_limit = float(limits_string[0][1:])
+        lower_limit = float(limit_string[0][1:])
+
         # The upper limit is in the format float).
         # We cut off the close paren
-        upper_limit = float(limits_string[1][:-1])
+        upper_limit = float(limit_string[1][:-1])
         degrees_of_freedom[direction] = (lower_limit, upper_limit)
+
         # Other limit strings are in the format:
         # (lower_limit upper_limit)
-        limits_string = next(lines).strip().split(" ")
-    #pdb.set_trace()
+        limit_string = next(lines).strip().split()
     return degrees_of_freedom
 
 
@@ -225,13 +196,3 @@ def parse_asf_hierarchy(lines, bonedata):
             bonedata[child].siblings = [x for x in children if x != child]
         hierarchy[parent] = children
     return hierarchy
-
-
-def main():
-    file_name = sys.argv[1]
-    #poses = parse_amc_file(file_name)
-    asf_data = parse_asf_file(file_name)
-    return 0
-
-if __name__ == "__main__":
-    main()

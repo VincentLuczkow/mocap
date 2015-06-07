@@ -1,5 +1,9 @@
-import ReadFile
 import pdb
+from sys import argv
+from pyAcclaim import ParseASFFile
+from pyAcclaim import ParseAMCFile
+from pyAcclaim import Render
+
 
 # Feel free to overwrite this test data with data from another file. Just make sure what you use to overwrite
 # is accurate.
@@ -23,7 +27,7 @@ def check_bones(bones, bonedata):
 def test_asf_parser():
     test_asf_file_name = "test.asf"
     # Run test
-    version, name, units, documentation, root, bones, bonedata, hierarchy = ReadFile.parse_asf_file(test_asf_file_name)
+    version, name, units, documentation, root, bones, bonedata, hierarchy = ParseASFFile.parse_asf_file(test_asf_file_name)
     try:
         assert version == actual_version
     except AssertionError:
@@ -52,10 +56,24 @@ def test_asf_parser():
         assert hierarchy == actual_hierarchy
     except AssertionError:
         pdb.set_trace()
+    return True
+
+
+def test_amc_parser():
+
+    return True
+
+
 
 def main():
-
-    return None
+    if argv[1] == "testasf":
+        test_asf_parser()
+    elif argv[1] == "testamc":
+        test_amc_parser()
+    else:
+        first_file_name = argv[1]
+        # ParseASFFile.parse_asf_file(first_file_name)
+        ParseAMCFile.parse_amc_file(first_file_name)
 
 
 class ParsingError(Exception):
