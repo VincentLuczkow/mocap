@@ -18,7 +18,7 @@ from numpy import pi
 # ...
 # :hierarchy
 # ...
-def parse_asf_file(asf_file_name):
+def parse_asf_file(asf_file_name: str) -> tuple:
     with open(asf_file_name, "r") as ASF_file:
         lines = iter(ASF_file.readlines())
         # Skip past starting comments
@@ -38,12 +38,9 @@ def parse_asf_file(asf_file_name):
 
                 check_header(":bonedata", lines)
                 bones, bonedata = parse_asf_bonedata(lines, units[2])
-                root = Bone.create_root_bone(root[1], root[3])
-                root.rotation_from_parent = root.rotation_from_axes
+                root = Bone.create_root_bone(root[1], root[3], root[0])
                 bonedata['root'] = root
-
                 hierarchy = parse_asf_hierarchy(lines, bonedata)
-                set_trace()
 
                 return version, name, units, documentation, root, bones, bonedata, hierarchy
     # This code is only reachable if :version never gets read.
@@ -51,16 +48,17 @@ def parse_asf_file(asf_file_name):
 
 
 # Makes sure the next line in lines matches "header"
-def check_header(header, lines):
+def check_header(header: str, lines) -> bool:
     header_line = next(lines)
     try:
         assert header_line.strip() == header
     except AssertionError:
         print("Parser went wrong somewhere. Header: " + header + " not properly parsed.")
         set_trace()
+    return True
 
 
-def parse_asf_version(line):
+def parse_asf_version(line: str) -> str:
     try:
         version = line.strip().split()[1]
     except IndexError:
@@ -69,7 +67,7 @@ def parse_asf_version(line):
     return version
 
 
-def parse_asf_name(line):
+def parse_asf_name(line: str) -> str:
     try:
         name = line.strip().split(" ")[1]
     except IndexError:
@@ -151,8 +149,8 @@ def parse_asf_bone(lines, degree_type):
     axis_values = [float(x) * multiplier for x in axis_line[1:4]]
     axis = axis_line[4]
     # Check if this bone has any rotational degrees of freedom
-    degrees_of_freedom = parse_degrees_of_freedom(lines)
-    bone = Bone(index, name, direction, length, axis, axis_values, degrees_of_freedom)
+    dof_order, degrees_of_freedom = parse_degrees_of_freedom(lines)
+    bone = Bone(index, name, direction, length, axis, axis_values, dof_order, degrees_of_freedom)
     return bone
 
 
@@ -160,8 +158,9 @@ def parse_degrees_of_freedom(lines):
     dof_line = next(lines).strip().split(" ")
     # If the bone has no degrees of freedom i.e. can't rotate
     if dof_line[0] != "dof":
-        return None
+        return [], {}
     degrees_of_freedom = {}
+    dof_order = dof_line[1:]
 
     # The first limit string is in the format:
     # limits (lower_limit upper_limit)
@@ -180,19 +179,21 @@ def parse_degrees_of_freedom(lines):
         # Other limit strings are in the format:
         # (lower_limit upper_limit)
         limit_string = next(lines).strip().split()
-    return degrees_of_freedom
+    return dof_order, degrees_of_freedom
 
 
 def parse_asf_hierarchy(lines, bonedata):
     hierarchy = {}
+    assert next(lines).strip() == "begin"
     for line in lines:
+        if line.strip() == 'end':
+            return hierarchy
         split_line = line.strip().split(" ")
         parent = split_line[0]
         children = split_line[1:]
         # Set children
         for child in children:
             bonedata[child].parent = bonedata[parent]
-            bonedata[child].compute_rotation_from_parent()
             bonedata[child].siblings = [x for x in children if x != child]
         hierarchy[parent] = children
     return hierarchy

@@ -71,17 +71,13 @@ def main():
     elif argv[1] == "testamc":
         test_amc_parser()
     else:
-        first_file_name = argv[1]
-        # ParseASFFile.parse_asf_file(first_file_name)
-        ParseAMCFile.parse_amc_file(first_file_name)
-
-
-class ParsingError(Exception):
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        repr(self.message)
+        asf_file_name = argv[1]
+        data = ParseASFFile.parse_asf_file(asf_file_name)
+        bone_data = data[6]
+        root = bone_data['root']
+        amc_file_name = argv[2]
+        poses = ParseAMCFile.parse_amc_file(amc_file_name)
+        Render.render_motion_capture(root, poses)
 
 
 if __name__ == "__main__":
