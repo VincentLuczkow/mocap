@@ -30,6 +30,19 @@ def calculate_euler_rotation_matrix(x_angle: float, y_angle: float, z_angle: flo
     rotation_matrix = np.dot(temp, x_rotation)
     return rotation_matrix
 
+# Returns a rotation in reverse order: z, then y, then x
+def calculate_reverse_euler_rotation_matrix(x_angle: float, y_angle: float, z_angle: float) -> np.ndarray:
+    # Calculate X: the matrix for rotation around the x axis.
+    x_rotation = x_rotate(x_angle)
+    # Calculate Y: the matrix for rotation around the y axis.
+    y_rotation = y_rotate(y_angle)
+    # Calculate Z: the matrix for rotation around the z axis.
+    z_rotation = z_rotate(z_angle)
+
+    temp = np.dot(x_rotation, y_rotation)
+    rotation_matrix = np.dot(temp, z_rotation)
+    return rotation_matrix
+
 
 def z_rotate(angle):
     rotation = np.zeros([4,4])

@@ -1,4 +1,6 @@
 from re import match
+from numpy import pi
+from pdb import set_trace
 
 # Assumes AMC file is in the following format:
 # comments
@@ -52,9 +54,14 @@ def parse_single_bone_pose(line, angle_type: str):
     split_line = line.strip().split()
     name = split_line[0]
     # TODO
-    if angle_type == "DEGREES":
-        pass
+    #if angle_type == ":DEGREES":
+    if False:
+        if name == "root":
+            values = [float(x) for x in split_line[1:4]]
+            angles = [float(x) * pi / 180 for x in split_line[4:]]
+            values.extend(angles)
+        else:
+            values = [float(x) * pi / 180 for x in split_line[1:]]
     else:
-        pass
-    values = [float(x) for x in split_line[1:]]
+        values = [float(x) for x in split_line[1:]]
     return {name : values}

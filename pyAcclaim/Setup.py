@@ -9,7 +9,7 @@ def do_full_setup(root: list, bones: list, bone_data: dict, poses: list, hierarc
     assert(number_of_bones == len(bone_data))
 
     root_translations = generate_root_translations(root, poses)
-    child_to_parent_rotations = calculate_child_to_parent_transformations(bone_data)
+    child_to_parent_rotations = calculate_parent_to_child_transformations(bone_data)
     pose_rotations = calculate_pose_rotations(bone_data, poses)
     bone_end_points = calculate_bone_end_points(bone_data)
     # Unused for now.
@@ -40,7 +40,7 @@ def calculate_child_to_parent_transformations(bonedata: dict) -> np.ndarray:
         bone = bonedata[bone_name]
         parent = bone.parent
         rotation = np.dot(parent.rotation_from_global, bone.rotation_to_global)
-        child_to_parent_rotations[bone.index] = np.transpose(rotation)
+        child_to_parent_rotations[bone.index] = rotation
     child_to_parent_rotations[0] = identity_matrix
     return child_to_parent_rotations
 
@@ -63,12 +63,16 @@ def calculate_bone_end_points(bone_data: dict) -> np.ndarray:
     bone_end_points = np.zeros([len(bone_data), 3], dtype=np.double)
     for bone_name in bone_data:
         bone = bone_data[bone_name]
+        global_end_points = np.ones(4)
         # The x coordinate of the end point.
-        bone_end_points[bone.index][0] = bone.length * bone.direction[0]
+        global_end_points[0] = bone.length * bone.direction[0]
         # The y coordinate of the end point.
-        bone_end_points[bone.index][1] = bone.length * bone.direction[1]
+        global_end_points[1] = bone.length * bone.direction[1]
         # The z coordinate of the end point.
-        bone_end_points[bone.index][2] = bone.length * bone.direction[2]
+        global_end_points[2] = bone.length * bone.direction[2]
+        rotated_end_points = np.dot(bone.rotation_from_global, global_end_points)
+
+        bone_end_points[bone.index] = rotated_end_points[:3]
     return bone_end_points
 
 
