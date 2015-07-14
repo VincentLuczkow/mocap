@@ -26,7 +26,7 @@ def parse_amc_file(file_name: str) -> list:
         line = next(lines).strip()
         assert line == "1"
         for line in lines:
-            poses.append(parse_pose(line, lines))
+            poses.append(parse_pose(line, lines, angle_type))
     return poses
 
 # Assumes pose is in the following format:
@@ -34,13 +34,13 @@ def parse_amc_file(file_name: str) -> list:
 # bone1 bone1_data
 # ...
 # lastbone lastbone_data
-def parse_pose(first_line: str, lines):
-    values = parse_single_bone_pose(first_line)
+def parse_pose(first_line: str, lines, angle_type: str):
+    values = parse_single_bone_pose(first_line, angle_type)
     for line in lines:
         if match(r'\d+', line.strip()):
             break
         else:
-            values.update(parse_single_bone_pose(line))
+            values.update(parse_single_bone_pose(line, angle_type))
     return values
 
 
@@ -48,8 +48,13 @@ def parse_pose(first_line: str, lines):
 # bonename dof1 dof2 ... dofn
 # where each dof was defined for bonename in the
 # ASF file corresponding to this AMC file.
-def parse_single_bone_pose(line):
+def parse_single_bone_pose(line, angle_type: str):
     split_line = line.strip().split()
     name = split_line[0]
+    # TODO
+    if angle_type == "DEGREES":
+        pass
+    else:
+        pass
     values = [float(x) for x in split_line[1:]]
     return {name : values}

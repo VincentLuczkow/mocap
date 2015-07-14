@@ -2,6 +2,7 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 from OpenGL.GL import *
 from .Bone import Bone
+from pdb import set_trace
 import numpy as np
 from time import time
 import sys
@@ -10,72 +11,146 @@ import sys
 name = "Motion Capture"
 # Time between poses in milliseconds
 time_between_poses = 0
-pose_list = []
-current_pose_number = 0
-current_pose = {}
-root = None
-bone_color = np.array([1.0, 50.0, 50.0, 1.0])
-light_diffuse_values = np.array([[0.0, 0.0, 1.0, 1.0]])
-light_ambient_values = np.array([[0.0, 0.0, 1.0, 1.0]])
-light_positions = np.array([[1.0, 1.0, 1.0, 0.0]])
+# Display properties
 start_time = time()
 
-# Renders a "bone" with length and direction in the local coordinate system
-# For now this just renders a line. Later this will probably switch to an ellipsoid of some sort.
-def render_single_bone(length, direction):
-    print(length)
-    print(direction)
+# Pose data
+bone_end_points = []
+root_translations = []
+child_to_parent_rotations = []
+pose_rotations = []
+direction_rotations = []
+hierarchy = []
 
+# Current values
+current_pose = 0
+current_bone = 0
+
+ground_display_list = []
+
+
+def draw_bone(index: int) -> int:
+    global current_pose
+
+    x_end, y_end, z_end = bone_end_points[index]
     glPushMatrix()
-    glLineWidth(5)
+    # Rotate from the bone's local coordinate system to its parent's coordinate system.
+    glMultMatrixd(child_to_parent_rotations[index])
+    # Perform pose rotations. Order is XYZ, which means
+    # the multiplications are Z * Y * X
+    glRotated(pose_rotations[current_pose][index][2], 0.0, 0.0, 1.0)
+    glRotated(pose_rotations[current_pose][index][1], 0.0, 1.0, 0.0)
+    glRotated(pose_rotations[current_pose][index][0], 1.0, 0.0, 0.0)
+
+    # Draw the bone
     glColor3f(1.0, 1.0, 1.0)
+    glLineWidth(5)
+
     glBegin(GL_LINES)
     glVertex3f(0.0, 0.0, 0.0)
-    glVertex3f(5, 0, 0)
+    glVertex3f(x_end, y_end, z_end)
+    glEnd()
+
+    # Translate to the end point of the bone.
+    glTranslated(x_end, y_end, z_end)
+
+    children = hierarchy[index]
+    for child in children:
+        draw_bone(child)
+    glPopMatrix()
+    return 0
+
+
+def render_pose() -> int:
+    global current_pose
+    # Rotate to local coordinate system.
+    glPushMatrix()
+    # Root translation
+    x_trans, y_trans, z_trans = root_translations[current_pose]
+    glTranslated(x_trans, y_trans, z_trans)
+
+    draw_bone(0)
+
+    glPopMatrix()
+    return 0
+
+
+def display_bone():
+    global current_pose
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    display_background()
+    render_pose()
+    glutSwapBuffers()
+    current_pose += 1
+    current_pose %= len(pose_rotations)
+
+
+def do_nothing():
+    return 0
+
+
+def render(data):
+    global bone_end_points, root_translations, child_to_parent_rotations, pose_rotations, hierarchy
+    bone_end_points, root_translations, child_to_parent_rotations, pose_rotations, hierarchy = data
+
+    init()
+    glutMainLoop()
+    return 0
+
+
+def display_background():
+    glLineWidth(2)
+    glBegin(GL_LINES)
+    # x axis in red
+    glColor3f(1.0, 0.0, 0.0)
+    glVertex3f(0.0, 0.0, 0.0)
+    glVertex3f(200, 0.0, 0.0)
+    # y axis in green
+    glColor3f(0.0, 1.0, 0.0)
+    glVertex3f(0.0, 0.0, 0.0)
+    glVertex3f(0.0, 200, 0.0)
+    # z axis in blue
+    glColor3f(0.0, 0.0, 1.0)
+    glVertex3f(0.0, 0.0, 0.0)
+    glVertex3f(0.0, 0.0, 200)
+    glEnd()
+
+    glColor3f(0.1, 0.5, 0.1)
+    glBegin(GL_QUADS)
+    # bl
+    glVertex3f(-500.0, 0.0, 500.0)
+    # br
+    glVertex3f(500.0, 0.0, 500.0)
+    # tr
+    glVertex3f(500.0, 0.0, -500.0)
+    # tl
+    glVertex3f(-500.0, 0.0, -500.0)
     glEnd()
 
 
-# Renders bone at the origin of the local coordinate system. Then renders
-# all of its descendents.
-def display_bone_tree(bone: Bone):
-
-    # Render the current bone
-    render_single_bone(bone.length, bone.direction)
-    #for child in bone.children:
-        # Rotate to child's coordinate system
-        #display_bone_tree(child)
-        # Pop the rotation
-
-    return 0
-
-
-def display_root():
-    global root, current_pose_number, current_pose
-    display_bone_tree(root)
-    current_pose_number += 1
-    current_pose = pose_list[current_pose_number]
-    return 0
-
-
 def init():
+    global ground_display_list
+
+    glutInit()
+    glutInitWindowSize(1000, 500)
+    # The default color
+    glClearColor(0.0, 0.0, 0.0, 1.0)
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
-    for i in range(len(light_positions)):
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse_values[i])
-        glLightfv(GL_LIGHT0, GL_POSITION, light_positions[i])
-    glEnable(GL_LIGHT0)
-    glEnable(GL_LIGHTING)
+    glutCreateWindow("Motion Capture")
+    glutDisplayFunc(display_bone)
+    glutIdleFunc(display_bone)
 
     glEnable(GL_DEPTH_TEST)
 
     glMatrixMode(GL_PROJECTION)
     # Field of view in degrees, aspect ratio, Z near, Z far
-    gluPerspective( 40.0, 1.0, 1.0, 10.0)
+    gluPerspective(80.0, 2.0, 1.0, 100.0)
     glMatrixMode(GL_MODELVIEW)
     # Three tuples:
     # Eye
     # Center
     # Up
-    gluLookAt(0.0, 0.0, 5.0,
+    gluLookAt(45.0, 45.0, 45.0,
               0.0, 0.0, 0.0,
               0.0, 1.0, 0.0)
 
@@ -83,138 +158,5 @@ def init():
     glShadeModel(GL_SMOOTH)
     # Enable face culling
     glEnable(GL_CULL_FACE)
-
-
-def draw_bone(length: float, pose: np.ndarray) -> int:
-    glPushMatrix()
-    glMultMatrixd(pose)
-
-    glPopMatrix()
-    return 0
-
-
-def render_single_pose(pose: np.ndarray, root_translation: np.ndarray, parent_to_child_rotations: np.ndarray,
-                       hierarchy: list) -> int:
-    current_bone = 0
-    return 0
-
-
-def draw_line():
-    glLineWidth(5)
-    glBegin(GL_LINES)
-    # draw x axis in red, y axis in green, z axis in blue
-
-    glColor3f(1.0, 0.2, 0.2)
-    glVertex3f(0.0, 0.0, 0.0)
-    glVertex3f(20, 0.0, 0.0)
-
-    glColor3f(0.2, 1.0, 0.2)
-    glVertex3f(0.0, 0.0, 0.0)
-    glVertex3f(0.0, 20, 0.0)
-
-    glColor3f(0.2, 0.2, 1.0)
-    glVertex3f(0.0, 0.0, 0.0)
-    glVertex3f(0.0, 0.0, 20)
-
-    glEnd()
-    time_passed = time() - start_time
-    glPushMatrix()
-    glRotate(180.0 - time_passed*5, 0.0, 0.0, 1.0)
-    glLineWidth(5)
-    glColor3f(1.0, 1.0, 1.0)
-    glBegin(GL_LINES)
-    glVertex3f(0.0, 0.0, 0.0)
-    glVertex3f(5, 0, 0)
-    glEnd()
-    glPopMatrix()
-
-
-def display():
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    draw_line()
-    glutSwapBuffers()
-
-
-def render():
-    glutInit()
-    glutInitWindowSize(1000, 500)
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
-    glutCreateWindow("Red 3D Lighted Cube")
-    glutDisplayFunc(display)
-    glutIdleFunc(display)
-    init()
-    glutMainLoop()
-    return 0
-
-
-# Create the basic scene
-def scene_init():
-    glutInit(sys.argv)
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH)
-
-    # Set initial window size
-    glutInitWindowSize(1000, 1000)
-    # Creates a window whose name is name
-    glutCreateWindow(name)
-    # The default color
-    glClearColor(0.0, 0.0, 0.0, 1.0)
-
-    # Causes pixel colors to be interpolated based on colors at each vertex
-    glShadeModel(GL_SMOOTH)
-    # Enable face culling
-    glEnable(GL_CULL_FACE)
     # Enable depth comparisons and update the depth buffer
     glEnable(GL_DEPTH_TEST)
-
-    return 0
-
-
-# Set up lighting
-def lighting():
-    glEnable(GL_LIGHTING)
-
-    # Set light zero position
-    glLightfv(GL_LIGHT0, GL_POSITION, [10.0, 4.0, 10.0, 1.0])
-    # Set light zero diffuse color
-    glLightfv(GL_LIGHT0, GL_AMBIENT, [0.25, 0.25, 1.25, 1.0])
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, [1.0, 1.0, 1.0, 1.0])
-    glLightfv(GL_LIGHT0, GL_SPECULAR, [0.25, 0.25, 0.25, 1.0])
-    # Set light zero attenuation
-    glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 0.1)
-    glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.05)
-
-    # Enable light zero
-    glEnable(GL_LIGHT0)
-    return 0
-
-
-def render_motion_capture(root_bone: Bone, poses: list) -> int:
-    global pose_list, current_pose, root
-    # Do basic scene initialization
-    scene_init()
-    # Do scene lighting
-    lighting()
-
-    pose_list = poses
-    current_pose = pose_list[0]
-    root = root_bone
-
-    # Set scene display function
-    glutDisplayFunc(display_root)
-    # Called over and over again
-    #glutIdleFunc(display_root)
-    glMatrixMode(GL_PROJECTION)
-    # Sets up projection matrix
-    gluPerspective(80.0, 1.0, 1.0, 80.0)
-    glMatrixMode(GL_MODELVIEW)
-    # Look from first three coordinates towards second three with orientation last three.
-    gluLookAt(0, 0, 10,
-              0, 0, 0,
-              0, 1, 0)
-    glPushMatrix()
-
-    # Display everything
-    glutMainLoop()
-
-    return 0

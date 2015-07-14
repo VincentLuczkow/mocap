@@ -38,8 +38,8 @@ def parse_asf_file(asf_file_name: str) -> tuple:
 
                 check_header(":bonedata", lines)
                 bones, bonedata = parse_asf_bonedata(lines, units[2])
-                root = Bone.create_root_bone(root[1], root[3], root[0])
-                bonedata['root'] = root
+                root_data = Bone.create_root_bone(root[1], root[3], root[0])
+                bonedata['root'] = root_data
                 hierarchy = parse_asf_hierarchy(lines, bonedata)
 
                 return version, name, units, documentation, root, bones, bonedata, hierarchy

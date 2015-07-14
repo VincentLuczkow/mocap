@@ -1,9 +1,9 @@
 import numpy as np
-
+from .MatrixMath import calculate_euler_rotation_matrix
 
 # Why doesn't numpy have methods for these? Nonsense, I assume.
 # For readability, I didn't combine these methods
-from pyAcclaim.Setup import x_rotate, y_rotate, z_rotate
+from pyAcclaim.MatrixMath import z_rotate, y_rotate, x_rotate
 
 
 class Bone:
@@ -16,10 +16,16 @@ class Bone:
         self.length = length
         # These values represent the rotation from global coordinates to local coordinates
         # Order of rotation is x, y, z.
-        self.rotation_from_global_angles = Bone.get_axis_values(axes, rotation_from_global_axes)
-        self.rotation_from_global = self.compute_rotation_from_global()
-        # Inverse of a rotation is its transpose
-        self.rotation_to_global = np.transpose(self.rotation_from_global)
+        if False:
+            self.rotation_from_global_angles = Bone.get_axis_values(axes, rotation_from_global_axes)
+            self.rotation_from_global = self.compute_rotation_from_global()
+            # Inverse of a rotation is its transpose
+            self.rotation_to_global = np.transpose(self.rotation_from_global)
+        else:
+            self.rotation_from_global_angles = Bone.get_axis_values(axes, rotation_from_global_axes)
+            self.rotation_to_global = self.compute_rotation_from_global()
+            # Inverse of a rotation is its transpose
+            self.rotation_from_global = np.transpose(self.rotation_to_global)
         self.rotation_from_parent = None
         self.dof_order = dof_order
         self.degrees_of_freedom = degrees_of_freedom
@@ -41,9 +47,8 @@ class Bone:
 
     # Computes a rotation matrix that converts from global coordinates to local coordinates.
     def compute_rotation_from_global(self)-> np.ndarray:
-        x_rotation = x_rotate(self.rotation_from_global_angles[0])
-        y_rotation = y_rotate(self.rotation_from_global_angles[1])
-        z_rotation = z_rotate(self.rotation_from_global_angles[2])
-        # Full rotation is RxRyRz
-        rotation = np.dot(x_rotation, np.dot(y_rotation, z_rotation))
+        x_angle = self.rotation_from_global_angles[0]
+        y_angle = self.rotation_from_global_angles[1]
+        z_angle = self.rotation_from_global_angles[2]
+        rotation = calculate_euler_rotation_matrix(x_angle, y_angle, z_angle)
         return rotation
