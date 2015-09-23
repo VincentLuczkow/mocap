@@ -17,7 +17,7 @@ start_time = time()
 # Pose data
 bone_end_points = []
 root_translations = []
-child_to_parent_rotations = []
+parent_to_child_rotations = []
 pose_rotations = []
 direction_rotations = []
 hierarchy = []
@@ -35,7 +35,7 @@ def draw_bone(index: int) -> int:
     x_end, y_end, z_end = bone_end_points[index]
     glPushMatrix()
     # Rotate from the bone's local coordinate system to its parent's coordinate system.
-    glMultMatrixd(child_to_parent_rotations[index])
+    glMultMatrixd(parent_to_child_rotations[index])
     # Perform pose rotations. Order is XYZ, which means
     # the multiplications are Z * Y * X
     glRotated(pose_rotations[current_pose][index][2], 0.0, 0.0, 1.0)
@@ -90,8 +90,8 @@ def do_nothing():
 
 
 def render(data):
-    global bone_end_points, root_translations, child_to_parent_rotations, pose_rotations, hierarchy
-    bone_end_points, root_translations, child_to_parent_rotations, pose_rotations, hierarchy = data
+    global bone_end_points, root_translations, parent_to_child_rotations, pose_rotations, hierarchy
+    bone_end_points, root_translations, parent_to_child_rotations, pose_rotations, hierarchy = data
 
     init()
     glutMainLoop()

@@ -37,12 +37,12 @@ def parse_asf_file(asf_file_name: str) -> tuple:
                 root = parse_asf_root(lines)
 
                 check_header(":bonedata", lines)
-                bones, bonedata = parse_asf_bonedata(lines, units[2])
+                bones, bone_data = parse_asf_bone_data(lines, units[2])
                 root_data = Bone.create_root_bone(root[1], root[3], root[0])
-                bonedata['root'] = root_data
-                hierarchy = parse_asf_hierarchy(lines, bonedata)
+                bone_data['root'] = root_data
+                hierarchy = parse_asf_hierarchy(lines, bone_data)
 
-                return version, name, units, documentation, root, bones, bonedata, hierarchy
+                return version, name, units, documentation, root, bones, bone_data, hierarchy
     # This code is only reachable if :version never gets read.
     raise EOFError("File's not in the right format. :version was never parsed")
 
@@ -115,7 +115,7 @@ def parse_asf_root(lines):
     return order, axis, position, orientation
 
 
-def parse_asf_bonedata(lines, degree_type):
+def parse_asf_bone_data(lines, degree_type):
     bones = ['root']
     bonedata = {}
     for line in lines:
@@ -132,11 +132,16 @@ def parse_asf_bonedata(lines, degree_type):
 
 
 # Assumes bone is in the format:
+# id id
+# name name
+# direction x_direction y_direction z_direction
+# length length
+# axis axis_1 axis_2 axis_3 AXIS_ORDERING
 def parse_asf_bone(lines, degree_type):
     index = next(lines).strip().split()[1]
     name = next(lines).strip().split()[1]
-    split_line = next(lines).strip().split()
-    direction = [float(x) for x in split_line[1:]]
+    direction_line = next(lines).strip().split()
+    direction = [float(x) for x in direction_line[1:]]
     length = float(next(lines).strip().split()[1])
     axis_line = next(lines).strip().split()
     # If angles are given as degrees

@@ -7,7 +7,6 @@ from pyAcclaim.MatrixMath import z_rotate, y_rotate, x_rotate
 
 
 class Bone:
-
     def __init__(self, index: int, name: str, direction: list, length: float, axes: str, rotation_from_global_axes: list,
                  dof_order: list, degrees_of_freedom: dict):
         self.index = int(index)
@@ -16,16 +15,10 @@ class Bone:
         self.length = length
         # These values represent the rotation from global coordinates to local coordinates
         # Order of rotation is x, y, z.
-        if False:
-            self.rotation_from_global_angles = Bone.get_axis_values(axes, rotation_from_global_axes)
-            self.rotation_from_global = self.compute_rotation_from_global()
-            # Inverse of a rotation is its transpose
-            self.rotation_to_global = np.transpose(self.rotation_from_global)
-        else:
-            self.rotation_from_global_angles = Bone.get_axis_values(axes, rotation_from_global_axes)
-            self.rotation_to_global = self.compute_rotation_from_global()
-            # Inverse of a rotation is its transpose
-            self.rotation_from_global = np.transpose(self.rotation_to_global)
+        self.rotation_from_global_angles = Bone.get_axis_values(axes, rotation_from_global_axes)
+        self.rotation_from_global = self.compute_rotation_from_global()
+        # Inverse of a rotation is its transpose
+        self.rotation_to_global = np.transpose(self.rotation_from_global)
         self.rotation_from_parent = None
         self.dof_order = dof_order
         self.degrees_of_freedom = degrees_of_freedom

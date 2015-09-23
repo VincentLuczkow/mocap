@@ -9,7 +9,7 @@ def do_full_setup(root: list, bones: list, bone_data: dict, poses: list, hierarc
     assert(number_of_bones == len(bone_data))
 
     root_translations = generate_root_translations(root, poses)
-    child_to_parent_rotations = calculate_parent_to_child_transformations(bone_data)
+    parent_to_child_rotations = calculate_parent_to_child_transformations(bone_data)
     pose_rotations = calculate_pose_rotations(bone_data, poses)
     bone_end_points = calculate_bone_end_points(bone_data)
     # Unused for now.
@@ -17,7 +17,7 @@ def do_full_setup(root: list, bones: list, bone_data: dict, poses: list, hierarc
     # direction_rotations = calculate_direction_rotations(bonedata)
     # lengths = np.zeros([number_of_bones], dtype=np.double)
     indexed_hierarchy = generate_indexed_hierarchy(hierarchy, bone_data)
-    return (bone_end_points, root_translations, child_to_parent_rotations, pose_rotations, indexed_hierarchy)
+    return bone_end_points, root_translations, parent_to_child_rotations, pose_rotations, indexed_hierarchy
 
 
 def generate_root_translations(root: list, poses: list) -> np.ndarray:
@@ -39,7 +39,7 @@ def calculate_child_to_parent_transformations(bonedata: dict) -> np.ndarray:
     for bone_name in [y for y in bonedata if y is not 'root']:
         bone = bonedata[bone_name]
         parent = bone.parent
-        rotation = np.dot(parent.rotation_from_global, bone.rotation_to_global)
+        rotation = np.dot(parent.rotation_to_global, bone.rotation_from_global)
         child_to_parent_rotations[bone.index] = rotation
     child_to_parent_rotations[0] = identity_matrix
     return child_to_parent_rotations
@@ -52,7 +52,7 @@ def calculate_parent_to_child_transformations(bonedata: dict) -> np.ndarray:
     for bone_name in [y for y in bonedata if y is not 'root']:
         bone = bonedata[bone_name]
         parent = bone.parent
-        rotation = np.dot(bone.rotation_from_global, parent.rotation_to_global)
+        rotation = np.dot(bone.rotation_to_global, parent.rotation_from_global)
         parent_to_child_rotations[bone.index] = rotation
     parent_to_child_rotations[0] = identity_matrix
     return parent_to_child_rotations
@@ -70,7 +70,7 @@ def calculate_bone_end_points(bone_data: dict) -> np.ndarray:
         global_end_points[1] = bone.length * bone.direction[1]
         # The z coordinate of the end point.
         global_end_points[2] = bone.length * bone.direction[2]
-        rotated_end_points = np.dot(bone.rotation_from_global, global_end_points)
+        rotated_end_points = np.dot(bone.rotation_to_global, global_end_points)
 
         bone_end_points[bone.index] = rotated_end_points[:3]
     return bone_end_points
@@ -118,7 +118,7 @@ def calculate_direction_rotations(bonedata: dict) -> np.ndarray:
             # To get the angle we only need to divide by the length of the z axis,
             # since direction is always a unit vector (or 0).
             angle = np.arccos(dot_product / z_axis_length)
-        except Exception:
+        except ZeroDivisionError:
             angle = 0
         direction_rotations[bone.index][:3] = axis
         direction_rotations[bone.index][3] = angle
@@ -132,3 +132,30 @@ def generate_indexed_hierarchy(hierarchy: dict, bonedata: dict) -> list:
         index = bonedata[parent].index
         indexed_hierarchy[index] = [bonedata[x].index for x in hierarchy[parent]]
     return indexed_hierarchy
+
+
+# Takes a pose, returns everything in global coordinates. For doing geometry
+# on the human figure, not for rendering.
+def convert_pose_to_global_coordinates(bonedata: dict, pose: dict, hierarchy: dict) -> dict:
+    bone_start_points = {}
+    bone_end_points = {}
+    current_global_coordinate = np.zeros(4)
+    current_matrix = identity_matrix
+    current_bones = ['root']
+    # Breadth first search through bones
+    while current_bones is not []:
+        current_bone = current_bones.pop(0)
+        start, end = find_bone_start_and_end(current_bone, bonedata)
+        bone_start_points[current_bone] = start
+        bone_end_points[current_bone] = end
+        children = hierarchy[current_bone]
+        for child in children:
+            current_bones.append(child)
+
+
+    return 0
+
+
+def find_bone_start_and_end(bone: str, bonedata: dict) -> tuple:
+
+    return 0, 0
