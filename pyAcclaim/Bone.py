@@ -15,10 +15,10 @@ class Bone:
         self.length = length
         # These values represent the rotation from global coordinates to local coordinates
         # Order of rotation is x, y, z.
-        self.rotation_from_global_angles = Bone.get_axis_values(axes, rotation_from_global_axes)
-        self.rotation_from_global = self.compute_rotation_from_global()
+        self.rotation_to_global_angles = Bone.get_axis_values(axes, rotation_from_global_axes)
+        self.rotation_to_global = self.compute_rotation_from_global()
         # Inverse of a rotation is its transpose
-        self.rotation_to_global = np.transpose(self.rotation_from_global)
+        self.rotation_from_global = np.transpose(self.rotation_to_global)
         self.rotation_from_parent = None
         self.dof_order = dof_order
         self.degrees_of_freedom = degrees_of_freedom
@@ -40,8 +40,8 @@ class Bone:
 
     # Computes a rotation matrix that converts from global coordinates to local coordinates.
     def compute_rotation_from_global(self)-> np.ndarray:
-        x_angle = self.rotation_from_global_angles[0]
-        y_angle = self.rotation_from_global_angles[1]
-        z_angle = self.rotation_from_global_angles[2]
+        x_angle = self.rotation_to_global_angles[0]
+        y_angle = self.rotation_to_global_angles[1]
+        z_angle = self.rotation_to_global_angles[2]
         rotation = calculate_euler_rotation_matrix(x_angle, y_angle, z_angle)
         return rotation

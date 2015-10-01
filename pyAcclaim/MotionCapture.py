@@ -1,5 +1,6 @@
 import numpy as np
 import pyAcclaim.MatrixMath as matrix
+import pyAcclaim.Render
 
 class MotionCapture:
 
@@ -47,7 +48,7 @@ class MotionCapture:
         for bone_name in [y for y in self.bone_data if y is not 'root']:
             bone = self.bone_data[bone_name]
             parent = bone.parent
-            rotation = np.dot(bone.rotation_to_global, parent.rotation_from_global)
+            rotation = np.dot(bone.rotation_from_global, parent.rotation_to_global)
             parent_to_child_rotations[bone.index] = rotation
         parent_to_child_rotations[0] = matrix.identity_matrix
         return parent_to_child_rotations
@@ -64,7 +65,7 @@ class MotionCapture:
             global_end_points[1] = bone.length * bone.direction[1]
             # The z coordinate of the end point.
             global_end_points[2] = bone.length * bone.direction[2]
-            rotated_end_points = np.dot(bone.rotation_to_global, global_end_points)
+            rotated_end_points = np.dot(bone.rotation_from_global, global_end_points)
 
             bone_end_points[bone.index] = rotated_end_points[:3]
         return bone_end_points
@@ -121,4 +122,6 @@ class MotionCapture:
             indexed_hierarchy[index] = [self.bone_data[x].index for x in self.hierarchy[parent]]
         return indexed_hierarchy
 
-MotionCapture.generate_root_translations()
+    def render(self):
+        data = (self.bone_end_points, self.root_translations, self.parent_to_child_rotations, self.pose_rotations, self.indexed_hierarchy)
+        pyAcclaim.Render.render(data)
