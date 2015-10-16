@@ -108,7 +108,7 @@ def parse_asf_documentation(lines):
 #   position
 #   orientation
 def parse_asf_root(lines):
-    order = next(lines).strip().split(" ")[1:]
+    order = next(lines).strip().lower().split(" ")[1:]
     axis = next(lines).strip().split(" ")[1]
     position = [float(x) for x in next(lines).strip().split(" ")[1:]]
     orientation = [float(x) for x in next(lines).strip().split(" ")[1:]]
@@ -152,7 +152,7 @@ def parse_asf_bone(lines, degree_type):
         multiplier = 1.0
     # The rotations from each axis for this bone.
     axis_values = [float(x) * multiplier for x in axis_line[1:4]]
-    axis = axis_line[4]
+    axis = axis_line[4].lower()
     # Check if this bone has any rotational degrees of freedom
     dof_order, degrees_of_freedom = parse_degrees_of_freedom(lines)
     bone = Bone(index, name, direction, length, axis, axis_values, dof_order, degrees_of_freedom)

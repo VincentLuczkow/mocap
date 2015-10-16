@@ -15,7 +15,7 @@ def main():
     hierarchy = data[7]
     poses = parse_amc_file(amc_file_name)
     scene = MotionCapture(root, bones, bone_data, poses, hierarchy)
-    scene.render()
+    scene.render_global()
 
 if __name__ == "__main__":
     main()

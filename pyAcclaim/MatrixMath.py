@@ -1,8 +1,24 @@
 import numpy as np
+from copy import copy
 
 identity_matrix = np.zeros([4,4])
 for i in range(4):
     identity_matrix[i][i] = 1
+
+start_matrix = np.array([[ 0.70710677,  -0.40824831,   0.57735032,   0.0   ],
+                        [  0.0,          0.81649661,   0.57735032,   0.0   ],
+                        [ -0.70710677,  -0.40824831,   0.57735032,   0.0   ],
+                        [  0.0,          0.0,         -77.94229126,  1.0   ]])
+
+
+
+def create_translation_matrix(x: float, y:float, z: float) -> np.ndarray:
+    matrix = copy(identity_matrix)
+    matrix[0][3] = x
+    matrix[1][3] = y
+    matrix[2][3] = z
+    return matrix
+
 
 # Rotates vector by x_angle around the x axis, then y_angle around the y axis, then z_angle around
 # the z_axis.
@@ -29,6 +45,7 @@ def calculate_euler_rotation_matrix(x_angle: float, y_angle: float, z_angle: flo
     temp = np.dot(z_rotation, y_rotation)
     rotation_matrix = np.dot(temp, x_rotation)
     return rotation_matrix
+
 
 # Returns a rotation in reverse order: z, then y, then x
 def calculate_reverse_euler_rotation_matrix(x_angle: float, y_angle: float, z_angle: float) -> np.ndarray:
